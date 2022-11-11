@@ -10,11 +10,15 @@ CONFIG += c++17 console
 
 SOURCES += \
     fr24aircraft.cpp \
+    fr24model.cpp \
+    fr24proxymodel.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
     fr24aircraft.h \
+    fr24model.h \
+    fr24proxymodel.h \
     mainwindow.h
 
 FORMS += \
