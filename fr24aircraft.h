@@ -8,24 +8,31 @@
 class FR24Aircraft
 {
 public:
-    FR24Aircraft(QJsonValue flight, bool isArrival);
-    void update(FR24Aircraft & other, bool isArrival);
+    enum UpdateType{
+        ARRIVAL,
+        DEPARTURE,
+        FULL
+    };
+    FR24Aircraft(QJsonValue flight, UpdateType updateType = FULL);
+    void update(FR24Aircraft & other, UpdateType updateType = FULL);
 
     void debug();
 
-    inline QString   getUID() { return m_uniqueId; }
-    inline QString   getLiveStatus(){ return m_liveStatus;}
-    inline QString   getModel(){ return m_model;}
-    inline QString   getAirline(){ return m_airline;}
-    inline QString   getCallsign(){ return m_callsign;}
-    inline QString   getRegistration(){ return m_registration;}
-    inline QDateTime getEstimatedDeparture(){ return m_estimatedDeparture;}
-    inline QDateTime getScheduledDeparture(){ return m_scheduledDeparture;}
-    inline QDateTime getEstimatedArrival(){ return m_estimatedArrival;}
-    inline QDateTime getScheduledArrival(){ return m_scheduledArrival;}
-    inline QString   getICAO(){ return m_icao;}
+    inline QString   getUID() const { return m_uniqueId; } const
+    inline QString   getLiveStatus() const { return m_liveStatus;} const
+    inline QString   getModel() const { return m_model;} const
+    inline QString   getAirline() const { return m_airline;} const
+    inline QString   getCallsign() const { return m_callsign;} const
+    inline QString   getRegistration() const { return m_registration;} const
+    inline QDateTime getDepartureTime() const { return m_departureTime;} const
+    inline QDateTime getArrivalTime()const { return m_arrivalTime;} const
+    inline QDateTime getNearestDate() const { return m_nearestDate; } const
+    inline QString   getICAO() const { return m_icao;}
 
-    inline bool isValid() { return m_isArrCmplt && m_isDepCmplt; }
+    bool isOutdated() const;
+    bool isOutdated(qint64 midnightTimestamp, qint64 tomorrowTimestamp, bool skipTomorrow=true) const;
+    bool isNotInteresting(const QStringList airline, const QStringList aircraft);
+    void refreshNearestDate();
 
 private:
     QString m_uniqueId;
@@ -35,14 +42,10 @@ private:
     QString m_airline;
     QString m_callsign;
     QString m_registration;
-    QDateTime m_estimatedDeparture;
-    QDateTime m_scheduledDeparture;
-    QDateTime m_estimatedArrival;
-    QDateTime m_scheduledArrival;
+    QDateTime m_departureTime;
+    QDateTime m_arrivalTime;
+    QDateTime m_nearestDate;
     QString m_icao;
-
-    bool m_isArrCmplt = false;
-    bool m_isDepCmplt = false;
 };
 
 #endif // FR24AIRCRAFT_H
