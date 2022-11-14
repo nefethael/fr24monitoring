@@ -22,33 +22,6 @@ protected:
     QNetworkAccessManager *m_manager = nullptr;
 };
 
-class NotifyRunNotifier : public Notifier
-{
-    Q_OBJECT
-public:
-    NotifyRunNotifier(QObject * parent = nullptr) : Notifier(parent){};
-
-    virtual bool sendNotification(const FR24Aircraft & craft) override;
-    virtual void setup(const QSettings & settings, MainWindow * origin) override;
-
-private:
-    QString m_notifyRun;
-};
-
-class PushBulletNotifier : public Notifier
-{
-    Q_OBJECT
-public:
-    PushBulletNotifier(QObject * parent = nullptr) : Notifier(parent){};
-
-    virtual bool sendNotification(const FR24Aircraft & craft) override;
-    virtual void setup(const QSettings & settings, MainWindow * origin) override;
-
-private:
-    QString m_pushBulletUser;
-    QString m_pushBulletToken;
-};
-
 class TelegramNotifier : public Notifier
 {
     Q_OBJECT

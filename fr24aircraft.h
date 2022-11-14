@@ -28,9 +28,11 @@ public:
     inline QDateTime getArrivalTime()const { return m_arrivalTime;} const
     inline QDateTime getNearestDate() const { return m_nearestDate; } const
     inline QString   getICAO() const { return m_icao;}
-    inline QString   getDiff() const { return m_diff;}
 
+    inline QString   getDiff() const { return m_diff;}
+    inline QString   getPhotoUrl() const { return m_photoUrl;}
     inline QString & getDiff() { return m_diff;};
+    inline QString & getPhotoUrl() { return m_photoUrl;};
 
     bool isOutdated() const;
     bool isOutdated(qint64 midnightTimestamp, qint64 tomorrowTimestamp, bool skipTomorrow=true) const;
@@ -53,6 +55,7 @@ private:
     QString m_icao;
 
     QString m_diff;
+    QString m_photoUrl;
 };
 
 #endif // FR24AIRCRAFT_H
