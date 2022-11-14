@@ -1,0 +1,11 @@
+{
+"common_aircraft": [
+"Airbus A319-111", "Boeing 737-8AS", "Airbus A320-214", "Embraer E190STD", "Airbus A321-212", "Mitsubishi CRJ-1000", "Airbus A320-271N", "Embraer E195-E2", "Embraer E190LR", "Boeing 737-7K2", "Airbus A319-112", "Airbus A320-251N", "Mitsubishi CRJ-1000EL", "Airbus A321-111", "Airbus A320-216", "Embraer E170STD", "Boeing 737-8K2", "Embraer E190-E2", "Airbus A318-111", "Airbus A320-232", "Boeing 737 MAX 8-200"
+],
+"common_shortcraft": [
+"321", "73H", "BEH", "32A", "738", "320", "319", "CRJ", "CRK"
+],
+"common_airline": [
+"Air France", "KLM", "Ryanair", "easyJet", "Lufthansa", "Vueling", "Volotea", "Chalair Aviation", "Iberia", "Iberia Regional", "Iberia Express", "Helvetic Airways", "Finistair", "Royal Air Maroc"
+]
+}
