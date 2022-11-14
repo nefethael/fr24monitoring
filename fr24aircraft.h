@@ -28,11 +28,16 @@ public:
     inline QDateTime getArrivalTime()const { return m_arrivalTime;} const
     inline QDateTime getNearestDate() const { return m_nearestDate; } const
     inline QString   getICAO() const { return m_icao;}
+    inline QString   getDiff() const { return m_diff;}
+
+    inline QString & getDiff() { return m_diff;};
 
     bool isOutdated() const;
     bool isOutdated(qint64 midnightTimestamp, qint64 tomorrowTimestamp, bool skipTomorrow=true) const;
-    bool isNotInteresting(const QStringList airline, const QStringList aircraft);
+    bool isNotInteresting(const QList<QVariant> airline, const QList<QVariant> aircraft, QList<QVariant> shortcraft);
     void refreshNearestDate();
+
+    friend bool operator!=(FR24Aircraft&, FR24Aircraft&);
 
 private:
     QString m_uniqueId;
@@ -46,6 +51,8 @@ private:
     QDateTime m_arrivalTime;
     QDateTime m_nearestDate;
     QString m_icao;
+
+    QString m_diff;
 };
 
 #endif // FR24AIRCRAFT_H

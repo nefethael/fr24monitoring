@@ -3,25 +3,46 @@
 
 #include "fr24model.h"
 #include "fr24proxymodel.h"
+#include "networknotifier.h"
 
 #include <QDateTime>
 #include <QNetworkReply>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QFile>
 
 #define K_REFRESH_PERIOD_MS 60000
 
 static const QString K_FR24_URL_TEMPLATE = "https://api.flightradar24.com/common/v1/airport.json?code=%1&plugin[]=&plugin-setting[schedule][mode]=%2&page=1&limit=100&plugin-setting[schedule][timestamp]=%3";
-static const QStringList K_COMMON_AIRCRAFT = {"Airbus A319-111", "Boeing 737-8AS", "Airbus A320-214", "Embraer E190STD", "Airbus A321-212", "Mitsubishi CRJ-1000", "Airbus A320-271N", "Embraer E195-E2", "Embraer E190LR", "Boeing 737-7K2", "Airbus A319-112", "Airbus A320-251N", "Mitsubishi CRJ-1000EL", "Airbus A321-111", "Airbus A320-216", "Embraer E170STD", "Boeing 737-8K2", "Embraer E190-E2", "Airbus A318-111", "Airbus A320-232", "Boeing 737 MAX 8-200"};
-static const QStringList K_COMMON_AIRLINE = {"Air France", "KLM", "Ryanair", "easyJet", "Lufthansa", "Vueling", "Volotea", "Chalair Aviation", "Iberia Regional", "Iberia Express", "Helvetic Airways", "Finistair", "Royal Air Maroc"};
 
+static QJsonDocument loadJson(QString fileName) {
+    QFile jsonFile(fileName);
+    jsonFile.open(QFile::ReadOnly);
+    return QJsonDocument().fromJson(jsonFile.readAll());
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    QSettings settings("setup.ini", QSettings::Format::IniFormat);
+    if(settings.status() != QSettings::Status::NoError){
+        qCritical() << "Setup.ini not loaded";
+    }
+    m_airport = settings.value("airport").toString();
+    if(m_airport.isEmpty()){
+        qCritical() << "airport is not set";
+    }
+    auto filters = loadJson("filters.json");
+    if(filters.isEmpty()){
+        qCritical() << "filters.json not loaded";
+    }
+    m_commonAirline = filters["common_airline"].toArray().toVariantList();
+    m_commonAircraft = filters["common_aircraft"].toArray().toVariantList();
+    m_commonShortcraft = filters["common_shortcraft"].toArray().toVariantList();
 
     m_model = new FR24Model(this);
 
@@ -33,6 +54,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_manager = new QNetworkAccessManager(this);
 
+    // setup notifier
+    initializeNotifier(settings);
+
     startRequest(10);
 }
 
@@ -40,6 +64,17 @@ MainWindow::~MainWindow()
 {
     delete ui;
     delete m_manager;
+}
+
+void MainWindow::initializeNotifier(const QSettings &settings)
+{
+    m_notifierList.append(new NotifyRunNotifier(this));
+    m_notifierList.append(new PushBulletNotifier(this));
+    m_notifierList.append(new TelegramNotifier(this));
+
+    for(auto & n : m_notifierList){
+        n->setup(settings, this);
+    }
 }
 
 void MainWindow::refreshTimestamp()
@@ -52,15 +87,40 @@ void MainWindow::refreshTimestamp()
     m_tomorrowTimestamp = tomorrow.toSecsSinceEpoch();
 }
 
+void MainWindow::notifyOnDelta()
+{
+    if(!m_previousFr24Map.isEmpty()){
+        for(auto kv : m_fr24Map){
+            if(!kv.isNotInteresting(m_commonAirline, m_commonAircraft, m_commonShortcraft)){
+                if (m_previousFr24Map.count(kv.getUID()) == 0){
+                    qDebug() << "notify new aircraft" << kv.getUID();
+                    notify(kv);
+                }else{
+                    auto & p = *m_previousFr24Map.find(kv.getUID());
+                    if(kv != p){
+                        qDebug() << "notify updated aircraft" << kv.getUID() << ": " << kv.getDiff();
+                        notify(kv);
+                    }
+                }
+            }
+        }
+    }
+
+    m_previousFr24Map = m_fr24Map;
+    m_fr24Map.clear();
+}
+
 void MainWindow::startRequest(qint64 delay)
 {
     qDebug() << "startRequest " << delay;
     QTimer::singleShot(delay, this, [this] () {
-        m_fr24Map.clear();
+
+        notifyOnDelta();
+
         m_photoMap.clear();
         refreshTimestamp();
         QNetworkRequest reqArr;
-        reqArr.setUrl(K_FR24_URL_TEMPLATE.arg("bod").arg("arrivals").arg(m_midnightTimestamp));
+        reqArr.setUrl(K_FR24_URL_TEMPLATE.arg(m_airport).arg("arrivals").arg(m_midnightTimestamp));
         auto* reply = m_manager->get(reqArr);
         connect(reply, &QNetworkReply::finished, this, [this]{ replyFinished(FR24Aircraft::ARRIVAL);});
     });
@@ -94,6 +154,9 @@ void MainWindow::replyFinished(FR24Aircraft::UpdateType updateType)
         auto flight = elt.toObject().value("flight");
 
         FR24Aircraft tmp(flight, updateType);
+        if(m_photoMap.count(tmp.getRegistration()) != 0){
+            //tmp.setPhotoUrl(m_photoMap[tmp.getRegistration()]);
+        }
 
         if(m_fr24Map.contains(tmp.getUID())){
             m_fr24Map.find(tmp.getUID())->update(tmp);
@@ -107,7 +170,7 @@ void MainWindow::replyFinished(FR24Aircraft::UpdateType updateType)
             qDebug() << "next is departures";
             QTimer::singleShot(10, this, [this] () {
                 QNetworkRequest req;
-                req.setUrl(K_FR24_URL_TEMPLATE.arg("bod").arg("departures").arg(m_midnightTimestamp));
+                req.setUrl(K_FR24_URL_TEMPLATE.arg(m_airport).arg("departures").arg(m_midnightTimestamp));
                 auto* reply = m_manager->get(req);
                 connect(reply, &QNetworkReply::finished, this, [this]{ replyFinished(FR24Aircraft::DEPARTURE);});
             });
@@ -120,12 +183,13 @@ void MainWindow::replyFinished(FR24Aircraft::UpdateType updateType)
             for(auto kv : m_fr24Map){
                 if( kv.isOutdated(m_midnightTimestamp, m_tomorrowTimestamp, false)
                         || kv.getLiveStatus().contains("Canceled")
-                        || kv.isNotInteresting(K_COMMON_AIRLINE, K_COMMON_AIRCRAFT)){
+                        || kv.isNotInteresting(m_commonAirline, m_commonAircraft, m_commonShortcraft)){
                     //
                 }else{
                     lst.append(kv);
                 }
             }
+            getCraftModel()->clearCraft();
             getCraftModel()->refreshCraft(lst);
 
             startRequest(60000);
