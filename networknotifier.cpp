@@ -1,6 +1,9 @@
 #include "networknotifier.h"
 #include <QNetworkReply>
+#include <QMutexLocker>
 #include "mainwindow.h"
+
+#define K_TELEGRAM_FLOOD_LIMIT 4000
 
 Notifier::Notifier(QObject * parent) : QObject(parent)
 {
@@ -11,6 +14,37 @@ Notifier::Notifier(QObject * parent) : QObject(parent)
 Notifier::~Notifier()
 {
     delete m_manager;
+}
+
+TelegramNotifier::TelegramNotifier(QObject * parent) : Notifier(parent)
+{
+    m_timer = new QTimer(this);
+    connect(m_timer, &QTimer::timeout, this, [this](){
+        if(!m_manager) {
+            qInfo() << "Manager is not ready yet.";
+        }
+
+        QMutexLocker locker(&m_mutex);
+        if(!m_pendingRequests.isEmpty()){
+            qDebug() << "Pending " << m_pendingRequests.count() << " to process";
+            auto str = m_pendingRequests.front();
+            m_pendingRequests.pop_front();
+            locker.unlock();
+
+            QTimer::singleShot(20, this, [str, this] () {
+                QNetworkRequest req;
+                req.setUrl(QString("https://api.telegram.org/bot%1/sendMessage").arg(m_telegramToken));
+                req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+                m_manager->post(req, str.toUtf8());
+            });
+        }
+    });
+    m_timer->start(K_TELEGRAM_FLOOD_LIMIT);
+};
+
+TelegramNotifier::~TelegramNotifier()
+{
+    delete m_timer;
 }
 
 void TelegramNotifier::setup(const QSettings & settings, MainWindow * origin)
@@ -51,11 +85,8 @@ bool TelegramNotifier::sendNotification(const FR24Aircraft & craft)
         .arg(m_telegramChat)
         .arg(text);
 
-    QNetworkRequest req;
-    req.setUrl(QString("https://api.telegram.org/bot%1/sendMessage").arg(m_telegramToken));
-    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    m_manager->post(req, str.toUtf8());
-
+    QMutexLocker locker(&m_mutex);
+    m_pendingRequests.append(str);
     return true;
 }
 
