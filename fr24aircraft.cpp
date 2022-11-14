@@ -124,7 +124,17 @@ void FR24Aircraft::update(FR24Aircraft & other, UpdateType updateType)
 
     refreshNearestDate();
 
-    m_icao = other.getICAO();
+    if(!other.getICAO().isEmpty() && (other.getICAO() != K_NA_STR)){
+        if (m_icao != other.getICAO()){
+            m_icao = other.getICAO();
+        }
+    }
+
+    if(!other.getPhotoUrl().isEmpty() && (other.getPhotoUrl() != K_NA_STR)){
+        if (m_photoUrl != other.getPhotoUrl()){
+            m_photoUrl = other.getPhotoUrl();
+        }
+    }
 }
 
 bool FR24Aircraft::isOutdated() const

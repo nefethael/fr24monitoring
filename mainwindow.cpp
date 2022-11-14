@@ -68,8 +68,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::initializeNotifier(const QSettings &settings)
 {
-    m_notifierList.append(new NotifyRunNotifier(this));
-    m_notifierList.append(new PushBulletNotifier(this));
     m_notifierList.append(new TelegramNotifier(this));
 
     for(auto & n : m_notifierList){
@@ -89,18 +87,16 @@ void MainWindow::refreshTimestamp()
 
 void MainWindow::notifyOnDelta()
 {
-    if(!m_previousFr24Map.isEmpty()){
-        for(auto kv : m_fr24Map){
-            if(!kv.isNotInteresting(m_commonAirline, m_commonAircraft, m_commonShortcraft)){
-                if (m_previousFr24Map.count(kv.getUID()) == 0){
-                    qDebug() << "notify new aircraft" << kv.getUID();
+    for(auto kv : m_fr24Map){
+        if(!kv.isNotInteresting(m_commonAirline, m_commonAircraft, m_commonShortcraft)){
+            if (m_previousFr24Map.count(kv.getUID()) == 0){
+                qDebug() << "notify new aircraft" << kv.getUID();
+                notify(kv);
+            }else{
+                auto & p = *m_previousFr24Map.find(kv.getUID());
+                if(kv != p){
+                    qDebug() << "notify updated aircraft" << kv.getUID() << ": " << kv.getDiff();
                     notify(kv);
-                }else{
-                    auto & p = *m_previousFr24Map.find(kv.getUID());
-                    if(kv != p){
-                        qDebug() << "notify updated aircraft" << kv.getUID() << ": " << kv.getDiff();
-                        notify(kv);
-                    }
                 }
             }
         }
@@ -155,7 +151,7 @@ void MainWindow::replyFinished(FR24Aircraft::UpdateType updateType)
 
         FR24Aircraft tmp(flight, updateType);
         if(m_photoMap.count(tmp.getRegistration()) != 0){
-            //tmp.setPhotoUrl(m_photoMap[tmp.getRegistration()]);
+            tmp.getPhotoUrl() = m_photoMap[tmp.getRegistration()];
         }
 
         if(m_fr24Map.contains(tmp.getUID())){
