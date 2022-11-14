@@ -13,12 +13,14 @@ SOURCES += \
     fr24model.cpp \
     fr24proxymodel.cpp \
     main.cpp \
+    networknotifier.cpp \
     mainwindow.cpp
 
 HEADERS += \
     fr24aircraft.h \
     fr24model.h \
-    fr24proxymodel.h \
+    fr24proxymodel.h \    
+    networknotifier.h \
     mainwindow.h
 
 FORMS += \
@@ -28,3 +30,7 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+DISTFILES += \
+    setup.ini \
+    filters.json

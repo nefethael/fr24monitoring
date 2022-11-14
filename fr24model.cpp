@@ -59,7 +59,9 @@ QVariant FR24Model::data(const QModelIndex &index, int role) const
         }
     }else if (role == Qt::BackgroundRole) {
         QColor color = Qt::white;
-        if(fr24data.isOutdated()){
+        if(!fr24data.getDiff().isEmpty()){
+            color = Qt::yellow;
+        }else if(fr24data.isOutdated()){
             color = Qt::darkCyan;
         }else if (fr24data.getNearestDate() < QDateTime::currentDateTime()){
             color = Qt::darkGray;
