@@ -62,7 +62,7 @@ FR24Aircraft::FR24Aircraft(QJsonValue flight, UpdateType updateType)
     refreshNearestDate();
 }
 
-void FR24Aircraft::debug()
+void FR24Aircraft::debug() const
 {
         qDebug() << QString("status=%1 model=%2 airline=%3 callsign=%4 registration=%5 icao=%6 arrival=%7 departure=%8 UID=%9")
                     .arg(m_liveStatus)
@@ -154,19 +154,19 @@ bool FR24Aircraft::isOutdated(qint64 midnightTimestamp, qint64 tomorrowTimestamp
     auto mdn = QDateTime::fromSecsSinceEpoch(midnightTimestamp);
     auto tmw = QDateTime::fromSecsSinceEpoch(tomorrowTimestamp);
 
+    auto ret = false;
     if(m_arrivalTime.isValid()){
         if((m_arrivalTime < mdn) || (skipTomorrow && m_arrivalTime > tmw)){
-            return true;
+            ret = true;
         }
     }
 
     if(m_departureTime.isValid()){
         if((m_departureTime < mdn) || (skipTomorrow && m_departureTime > tmw)){
-            return true;
+            ret = true;
         }
     }
-
-    return false;
+    return ret;
 }
 
 bool FR24Aircraft::isNotInteresting(QList<QVariant> airline, QList<QVariant> aircraft, QList<QVariant> shortcraft)
@@ -204,49 +204,44 @@ bool operator!=(FR24Aircraft& d1, FR24Aircraft& d2) // Call by reference
     diff = "";
     bool isDiff = false;
 
-    if (d2.getUID()  != d1.getUID()){
-        isDiff = true;
-        diff.append(QString("[UID:%1!=%2]").arg(d1.getUID()).arg(d2.getUID()));
-    }
-
     if (d2.getLiveStatus()  != d1.getLiveStatus()){
         // don't trigger notification for that
-        diff.append(QString("[STS:%1!=%2]").arg(d1.getLiveStatus()).arg(d2.getLiveStatus()));
+        diff.append(QString(" - status %2 → %1\n").arg(d1.getLiveStatus()).arg(d2.getLiveStatus()));
     }
 
     if (d2.getModel()  != d1.getModel()){
         isDiff = true;
-        diff.append(QString("[MDL:%1!=%2]").arg(d1.getModel()).arg(d2.getModel()));
+        diff.append(QString(" - model %2 → %1\n").arg(d1.getModel()).arg(d2.getModel()));
     }
 
     if (d2.getAirline()  != d1.getAirline()){
         isDiff = true;
-        diff.append(QString("[LIN:%1!=%2]").arg(d1.getAirline()).arg(d2.getAirline()));
+        diff.append(QString(" - airline %2 → %1\n").arg(d1.getAirline()).arg(d2.getAirline()));
     }
 
     if (d2.getCallsign()  != d1.getCallsign()){
-        isDiff = true;
-        diff.append(QString("[CAL:%1!=%2]").arg(d1.getCallsign()).arg(d2.getCallsign()));
+        // don't trigger notification for that
+        diff.append(QString(" - callsign %2 → %1\n").arg(d1.getCallsign()).arg(d2.getCallsign()));
     }
 
     if (d2.getRegistration()  != d1.getRegistration()){
         isDiff = true;
-        diff.append(QString("[REG:%1!=%2]").arg(d1.getRegistration()).arg(d2.getRegistration()));
+        diff.append(QString(" - registration %2 → %1\n").arg(d1.getRegistration()).arg(d2.getRegistration()));
     }
 
     if (qAbs(d2.getDepartureTime().secsTo(d1.getDepartureTime())) > 3600){
         isDiff = true;
-        diff.append(QString("[DEP:%1!=%2]").arg(d1.getDepartureTime().toString()).arg(d2.getDepartureTime().toString()));
+        diff.append(QString(" - departure %2 → %1\n").arg(d1.getDepartureTime().toString()).arg(d2.getDepartureTime().toString()));
     }
 
     if (qAbs(d2.getArrivalTime().secsTo(d1.getArrivalTime())) > 3600){
         isDiff = true;
-        diff.append(QString("[ARR:%1!=%2]").arg(d1.getArrivalTime().toString()).arg(d2.getArrivalTime().toString()));
+        diff.append(QString(" - arrival %2 → %1\n").arg(d1.getArrivalTime().toString()).arg(d2.getArrivalTime().toString()));
     }
 
     if (d2.getICAO()  != d1.getICAO()){
         isDiff = true;
-        diff.append(QString("[ICA:%1!=%2]").arg(d1.getICAO()).arg(d2.getICAO()));
+        diff.append(QString(" - icao %2 → %1\n").arg(d1.getICAO()).arg(d2.getICAO()));
     }
 
     return isDiff;

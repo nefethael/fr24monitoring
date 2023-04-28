@@ -61,29 +61,41 @@ void TelegramNotifier::setup(const QSettings & settings, MainWindow * origin)
 
 bool TelegramNotifier::sendNotification(const FR24Aircraft & craft)
 {
-    QString text = QString("Airline:`%1` \\| Model:*%2* \\| Reg:`%3` \\| Callsign:`%4` \\| ETA:`%5` \\| ETD:`%6`")
+    QString reg = craft.getRegistration();
+    if(reg != "N/A"){
+        reg = QString("[%1](https://www.flightradar24.com/data/aircraft/%1)").arg(craft.getRegistration());
+    }
+
+    QString text = QString("Airline:`%1` \\| Model:*%2* \\| Reg:%3 \\| Callsign:`%4` \\| ETA:`%5` \\| ETD:`%6`")
             .arg(craft.getAirline())
             .arg(craft.getModel())
-            .arg(craft.getRegistration())
+            .arg(reg)
             .arg(craft.getCallsign())
             .arg(craft.getArrivalTime().toString("hh:mm(dd)"))
             .arg(craft.getDepartureTime().toString("hh:mm(dd)"));
 
-    if(!craft.getDiff().isEmpty()){
-        text.append(QString(" \\| Updating:%1").arg(craft.getDiff()));
+    if(!craft.getICAO().isEmpty() && craft.getICAO() != "N/A"){
+        text.append(QString(" \\| Icao:[%1](https://globe.adsbexchange.com/?icao=%1)").arg(craft.getICAO()));
     }
 
-    if(!craft.getICAO().isEmpty() && craft.getICAO() != "N/A"){
-        text.append(QString(" \\| [%1](https://globe.adsbexchange.com/?icao=%1)").arg(craft.getICAO()));
+    if(!craft.getDiff().isEmpty()){
+        text.append(QString(" \\| Updating  \n%1").arg(craft.getDiff()));
     }
 
     if(!craft.getPhotoUrl().isEmpty()){
         text.prepend(QString("[](%1) \\| ").arg(craft.getPhotoUrl().replace("_", "\\\\_")));
     }
 
-    QString str = QString("{\"chat_id\":\"%1\", \"text\": \"%2\", \"disable_web_page_preview\": \"false\", \"parse_mode\": \"Markdown\" }")
+    auto now_hour = QDateTime::currentDateTime().time().hour();
+    auto silent = "false";
+    if ((now_hour > 22) || (now_hour < 8)){
+        silent = "true";
+    }
+
+    QString str = QString("{\"chat_id\":\"%1\", \"text\": \"%2\", \"disable_web_page_preview\": \"false\", \"parse_mode\": \"Markdown\", \"disable_notification\": \"%3\" }")
         .arg(m_telegramChat)
-        .arg(text);
+        .arg(text)
+        .arg(silent);
 
     QMutexLocker locker(&m_mutex);
     m_pendingRequests.append(str);

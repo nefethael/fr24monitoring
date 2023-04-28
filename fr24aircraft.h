@@ -16,7 +16,7 @@ public:
     FR24Aircraft(QJsonValue flight, UpdateType updateType = FULL);
     void update(FR24Aircraft & other, UpdateType updateType = FULL);
 
-    void debug();
+    void debug() const;
 
     inline QString   getUID() const { return m_uniqueId; } const
     inline QString   getLiveStatus() const { return m_liveStatus;} const

@@ -14,7 +14,7 @@
 
 #define K_REFRESH_PERIOD_MS 60000
 
-static const QString K_FR24_URL_TEMPLATE = "https://api.flightradar24.com/common/v1/airport.json?code=%1&plugin[]=&plugin-setting[schedule][mode]=%2&page=1&limit=100&plugin-setting[schedule][timestamp]=%3";
+static const QString K_FR24_URL_TEMPLATE = "https://api.flightradar24.com/common/v1/airport.json?code=%1&plugin[]=&plugin-setting[schedule][mode]=%2&page=1&limit=100&fleet=&token=&plugin-setting[schedule][timestamp]=%3";
 
 static QJsonDocument loadJson(QString fileName) {
     QFile jsonFile(fileName);
@@ -29,13 +29,21 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     QSettings settings("setup.ini", QSettings::Format::IniFormat);
+
     if(settings.status() != QSettings::Status::NoError){
         qCritical() << "Setup.ini not loaded";
     }
+
     m_airport = settings.value("airport").toString();
     if(m_airport.isEmpty()){
         qCritical() << "airport is not set";
     }
+
+    m_silentStart = settings.value("silent").toString();
+    if(m_silentStart.isEmpty()){
+        qCritical() << "silent is not set";
+    }
+
     auto filters = loadJson("filters.json");
     if(filters.isEmpty()){
         qCritical() << "filters.json not loaded";
@@ -78,7 +86,8 @@ void MainWindow::initializeNotifier(const QSettings &settings)
 void MainWindow::refreshTimestamp()
 {
     auto midnight = QDateTime::currentDateTime();
-    midnight.setTime(QTime());
+    midnight.setTime(midnight.time().addSecs(-60*60));
+    //midnight.setTime(QTime());
     m_midnightTimestamp = midnight.toSecsSinceEpoch();
 
     auto tomorrow = midnight.addDays(1);
@@ -87,16 +96,25 @@ void MainWindow::refreshTimestamp()
 
 void MainWindow::notifyOnDelta()
 {
-    for(auto kv : m_fr24Map){
-        if(!kv.isNotInteresting(m_commonAirline, m_commonAircraft, m_commonShortcraft)){
-            if (m_previousFr24Map.count(kv.getUID()) == 0){
-                qDebug() << "notify new aircraft" << kv.getUID();
-                notify(kv);
-            }else{
-                auto & p = *m_previousFr24Map.find(kv.getUID());
-                if(kv != p){
-                    qDebug() << "notify updated aircraft" << kv.getUID() << ": " << kv.getDiff();
+    if(m_fr24Map.empty()){
+        qInfo() << "don't do anything if there is no results";
+        return;
+    }
+
+    if(m_previousFr24Map.empty() && (m_silentStart == "1")){
+        qInfo() << "first start of application, don't notify";
+    }else{
+        for(auto kv : m_fr24Map){
+            if(!kv.isNotInteresting(m_commonAirline, m_commonAircraft, m_commonShortcraft)){
+                if (m_previousFr24Map.count(kv.getUID()) == 0){
+                    qDebug() << "notify new aircraft" << kv.getUID();
                     notify(kv);
+                }else{
+                    auto & p = *m_previousFr24Map.find(kv.getUID());
+                    if(kv != p){
+                        qDebug() << "notify updated aircraft" << kv.getUID() << ": " << kv.getDiff();
+                        notify(kv);
+                    }
                 }
             }
         }
@@ -115,8 +133,9 @@ void MainWindow::startRequest(qint64 delay)
 
         m_photoMap.clear();
         refreshTimestamp();
-        QNetworkRequest reqArr;
+        QNetworkRequest reqArr;        
         reqArr.setUrl(K_FR24_URL_TEMPLATE.arg(m_airport).arg("arrivals").arg(m_midnightTimestamp));
+
         auto* reply = m_manager->get(reqArr);
         connect(reply, &QNetworkReply::finished, this, [this]{ replyFinished(FR24Aircraft::ARRIVAL);});
     });

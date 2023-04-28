@@ -48,6 +48,7 @@ private:
     qint64 m_midnightTimestamp;
     qint64 m_tomorrowTimestamp;
 
+    QString m_silentStart;
     QString m_airport;
     QList<QVariant> m_commonAirline;
     QList<QVariant> m_commonAircraft;
