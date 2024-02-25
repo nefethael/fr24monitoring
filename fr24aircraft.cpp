@@ -169,12 +169,28 @@ bool FR24Aircraft::isOutdated(qint64 midnightTimestamp, qint64 tomorrowTimestamp
     return ret;
 }
 
-bool FR24Aircraft::isNotInteresting(QList<QVariant> airline, QList<QVariant> aircraft, QList<QVariant> shortcraft)
+bool FR24Aircraft::checkTimeIsNight(QTime time)
+{
+    return (time < QTime(8, 0, 0)) || (time > QTime(21, 0, 0));
+}
+
+bool FR24Aircraft::isNotInteresting(QList<QVariant> airline, QList<QVariant> aircraft, QList<QVariant> shortcraft, QList<QVariant> cargo)
 {
     if(airline.indexOf(m_airline) != -1){
         if((aircraft.indexOf(m_model) != -1) || (shortcraft.indexOf(m_model) != -1)){
             return true;
         }
+    }
+    if(cargo.indexOf(m_airline) != -1){
+        if((aircraft.indexOf(m_model) != -1) || (shortcraft.indexOf(m_model) != -1)){
+            if(m_arrivalTime.isValid()){
+                return checkTimeIsNight(m_arrivalTime.time());
+            }
+            if(m_departureTime.isValid()){
+                return checkTimeIsNight(m_departureTime.time());
+            }
+        }
+
     }
     return false;
 }

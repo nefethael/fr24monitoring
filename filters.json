@@ -1,11 +1,11 @@
 {
 "common_aircraft": [
-"Airbus A319-111", "Boeing 737-8AS", "Airbus A320-214", "Embraer E190STD", "Airbus A321-212", "Mitsubishi CRJ-1000", "Airbus A320-271N", "Embraer E195-E2", "Embraer E190LR", "Boeing 737-7K2", "Airbus A319-112", "Airbus A320-251N", "Mitsubishi CRJ-1000EL", "Airbus A321-111", "Airbus A320-216", "Embraer E170STD", "Boeing 737-8K2", "Embraer E190-E2", "Airbus A318-111", "Airbus A320-232", "Boeing 737 MAX 8-200"
+"Boeing 737-7D6C", "Embraer E190AR", "Airbus A319-114", "Boeing 737-8D6", "Mitsubishi CRJ-900LR", "Boeing 737-8B6", "Airbus A321-231", "Airbus A319-111", "Boeing 737-8AS", "Airbus A320-214", "Embraer E190STD", "Airbus A321-212", "Mitsubishi CRJ-1000", "Airbus A320-271N", "Embraer E195-E2", "Embraer E190LR", "Boeing 737-7K2", "Airbus A319-112", "Airbus A320-251N", "Mitsubishi CRJ-1000EL", "Airbus A321-111", "Airbus A320-216", "Embraer E170STD", "Boeing 737-8K2", "Embraer E190-E2", "Airbus A318-111", "Airbus A320-232", "Boeing 737 MAX 8-200", "Boeing 737-8BK", "Boeing 737-9K2"
 ],
 "common_shortcraft": [
-"321", "73H", "BEH", "32A", "738", "320", "319", "CRJ", "CRK"
+"7S7", "295", "321", "73H", "BEH", "32A", "32B", "32R", "738", "320", "319", "CRJ", "CRK", "7M8", "E90", "32N", "A319", "B738", "32S", "CRJX", "E70", "318", "E190", "A320", "E170", "73W", "CR9", "EMJ"
 ],
 "common_airline": [
-"Air France", "KLM", "Ryanair", "easyJet", "Lufthansa", "Vueling", "Volotea", "Chalair Aviation", "Iberia", "Iberia Regional", "Iberia Express", "Helvetic Airways", "Finistair", "Royal Air Maroc"
+"Volotea (10 Years Livery)", "Air France", "KLM", "Ryanair", "easyJet", "Lufthansa", "Vueling", "Volotea", "Chalair Aviation", "Iberia", "Iberia Regional", "Iberia Express", "Helvetic Airways", "Finistair", "Royal Air Maroc", "British Airways", "Aer Lingus", "Air Algerie", "Turkish Airlines", "Aegean Airlines", "Ryanair UK", "Transavia", "Tunisair", "Air Arabia Maroc", "Embraer E170LR", "Swiss"
 ]
 }

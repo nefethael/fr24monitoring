@@ -51,6 +51,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_commonAirline = filters["common_airline"].toArray().toVariantList();
     m_commonAircraft = filters["common_aircraft"].toArray().toVariantList();
     m_commonShortcraft = filters["common_shortcraft"].toArray().toVariantList();
+    m_cargoAirline = filters["cargo_airline"].toArray().toVariantList();
 
     m_model = new FR24Model(this);
 
@@ -86,7 +87,6 @@ void MainWindow::initializeNotifier(const QSettings &settings)
 void MainWindow::refreshTimestamp()
 {
     auto midnight = QDateTime::currentDateTime();
-    midnight.setTime(midnight.time().addSecs(-60*60));
     //midnight.setTime(QTime());
     m_midnightTimestamp = midnight.toSecsSinceEpoch();
 
@@ -105,7 +105,7 @@ void MainWindow::notifyOnDelta()
         qInfo() << "first start of application, don't notify";
     }else{
         for(auto kv : m_fr24Map){
-            if(!kv.isNotInteresting(m_commonAirline, m_commonAircraft, m_commonShortcraft)){
+            if(!kv.isNotInteresting(m_commonAirline, m_commonAircraft, m_commonShortcraft, m_cargoAirline)){
                 if (m_previousFr24Map.count(kv.getUID()) == 0){
                     qDebug() << "notify new aircraft" << kv.getUID();
                     notify(kv);
@@ -161,6 +161,7 @@ void MainWindow::replyFinished(FR24Aircraft::UpdateType updateType)
     QJsonValue photo = json["result"]["response"]["aircraftImages"];
     for (QJsonValueRef img : photo.toArray()){
         auto imgUrl = img.toObject().value("images")["thumbnails"][0]["src"].toString();
+        imgUrl = imgUrl.replace("cdn.jetphotos.com/200", "cdn.jetphotos.com/full").replace("_tb.jpg", ".jpg");
         auto registration = img.toObject().value("registration").toString();
         m_photoMap[registration]=imgUrl;
     }
@@ -198,7 +199,7 @@ void MainWindow::replyFinished(FR24Aircraft::UpdateType updateType)
             for(auto kv : m_fr24Map){
                 if( kv.isOutdated(m_midnightTimestamp, m_tomorrowTimestamp, false)
                         || kv.getLiveStatus().contains("Canceled")
-                        || kv.isNotInteresting(m_commonAirline, m_commonAircraft, m_commonShortcraft)){
+                        || kv.isNotInteresting(m_commonAirline, m_commonAircraft, m_commonShortcraft, m_cargoAirline)){
                     //
                 }else{
                     lst.append(kv);

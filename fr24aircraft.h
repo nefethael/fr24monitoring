@@ -36,12 +36,14 @@ public:
 
     bool isOutdated() const;
     bool isOutdated(qint64 midnightTimestamp, qint64 tomorrowTimestamp, bool skipTomorrow=true) const;
-    bool isNotInteresting(const QList<QVariant> airline, const QList<QVariant> aircraft, QList<QVariant> shortcraft);
+    bool isNotInteresting(const QList<QVariant> airline, const QList<QVariant> aircraft, QList<QVariant> shortcraft, QList<QVariant> cargo);
     void refreshNearestDate();
 
     friend bool operator!=(FR24Aircraft&, FR24Aircraft&);
 
 private:
+    static bool checkTimeIsNight(QTime time);
+
     QString m_uniqueId;
 
     QString m_liveStatus;
