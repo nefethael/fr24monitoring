@@ -52,6 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_commonAircraft = filters["common_aircraft"].toArray().toVariantList();
     m_commonShortcraft = filters["common_shortcraft"].toArray().toVariantList();
     m_cargoAirline = filters["cargo_airline"].toArray().toVariantList();
+    m_cargoAircraft = filters["cargo_aircraft"].toArray().toVariantList();
 
     m_model = new FR24Model(this);
 
@@ -105,7 +106,7 @@ void MainWindow::notifyOnDelta()
         qInfo() << "first start of application, don't notify";
     }else{
         for(auto kv : m_fr24Map){
-            if(!kv.isNotInteresting(m_commonAirline, m_commonAircraft, m_commonShortcraft, m_cargoAirline)){
+            if(!kv.isNotInteresting(m_commonAirline, m_commonAircraft, m_commonShortcraft, m_cargoAirline, m_cargoAircraft)){
                 if (m_previousFr24Map.count(kv.getUID()) == 0){
                     qDebug() << "notify new aircraft" << kv.getUID();
                     notify(kv);
@@ -199,7 +200,7 @@ void MainWindow::replyFinished(FR24Aircraft::UpdateType updateType)
             for(auto kv : m_fr24Map){
                 if( kv.isOutdated(m_midnightTimestamp, m_tomorrowTimestamp, false)
                         || kv.getLiveStatus().contains("Canceled")
-                        || kv.isNotInteresting(m_commonAirline, m_commonAircraft, m_commonShortcraft, m_cargoAirline)){
+                        || kv.isNotInteresting(m_commonAirline, m_commonAircraft, m_commonShortcraft, m_cargoAirline, m_cargoAircraft)){
                     //
                 }else{
                     lst.append(kv);

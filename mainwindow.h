@@ -54,5 +54,6 @@ private:
     QList<QVariant> m_commonAircraft;
     QList<QVariant> m_commonShortcraft;
     QList<QVariant> m_cargoAirline;
+    QList<QVariant> m_cargoAircraft;
 };
 #endif // MAINWINDOW_H

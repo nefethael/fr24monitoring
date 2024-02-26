@@ -174,7 +174,7 @@ bool FR24Aircraft::checkTimeIsNight(QTime time)
     return (time < QTime(8, 0, 0)) || (time > QTime(21, 0, 0));
 }
 
-bool FR24Aircraft::isNotInteresting(QList<QVariant> airline, QList<QVariant> aircraft, QList<QVariant> shortcraft, QList<QVariant> cargo)
+bool FR24Aircraft::isNotInteresting(QList<QVariant> airline, QList<QVariant> aircraft, QList<QVariant> shortcraft, QList<QVariant> cargo, QList<QVariant> cargocraft)
 {
     if(airline.indexOf(m_airline) != -1){
         if((aircraft.indexOf(m_model) != -1) || (shortcraft.indexOf(m_model) != -1)){
@@ -182,7 +182,7 @@ bool FR24Aircraft::isNotInteresting(QList<QVariant> airline, QList<QVariant> air
         }
     }
     if(cargo.indexOf(m_airline) != -1){
-        if((aircraft.indexOf(m_model) != -1) || (shortcraft.indexOf(m_model) != -1)){
+        if((aircraft.indexOf(m_model) != -1) || (shortcraft.indexOf(m_model) != -1) || (cargocraft.indexOf(m_model) != -1)){
             if(m_arrivalTime.isValid()){
                 return checkTimeIsNight(m_arrivalTime.time());
             }
