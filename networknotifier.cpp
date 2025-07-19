@@ -4,6 +4,7 @@
 #include "mainwindow.h"
 
 #define K_TELEGRAM_FLOOD_LIMIT 4000
+#define K_PING_PERIOD 3600000 // 1h
 
 Notifier::Notifier(QObject * parent) : QObject(parent)
 {
@@ -22,35 +23,83 @@ TelegramNotifier::TelegramNotifier(QObject * parent) : Notifier(parent)
     connect(m_timer, &QTimer::timeout, this, [this](){
         if(!m_manager) {
             qInfo() << "Manager is not ready yet.";
+            return;
         }
 
-        QMutexLocker locker(&m_mutex);
-        if(!m_pendingRequests.isEmpty()){
-            qDebug() << "Pending " << m_pendingRequests.count() << " to process";
-            auto str = m_pendingRequests.front();
-            m_pendingRequests.pop_front();
-            locker.unlock();
+        {
+            QMutexLocker locker(&m_mutex);
+            if(!m_pendingRequests.isEmpty()){
+                qDebug() << "Pending " << m_pendingRequests.count() << " to process";
+                auto str = m_pendingRequests.front();
+                m_pendingRequests.pop_front();
+                locker.unlock();
 
-            QTimer::singleShot(20, this, [str, this] () {
-                QNetworkRequest req;
-                req.setUrl(QString("https://api.telegram.org/bot%1/sendMessage").arg(m_telegramToken));
-                req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-                m_manager->post(req, str.toUtf8());
-            });
+                QTimer::singleShot(20, this, [str, this] () {
+                    QNetworkRequest req;
+                    req.setUrl(QString("https://api.telegram.org/bot%1/sendMessage").arg(m_telegramToken));
+                    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+                    m_manager->post(req, str.toUtf8());
+                });
+            }
+        }
+
+        {
+            QMutexLocker locker(&m_mutex);
+            if(!m_pendingMonitRequests.isEmpty()){
+                qDebug() << "Pending Monit " << m_pendingMonitRequests.count() << " to process";
+                auto str = m_pendingMonitRequests.front();
+                m_pendingMonitRequests.pop_front();
+                locker.unlock();
+
+                QTimer::singleShot(20, this, [str, this] () {
+                    QNetworkRequest req;
+                    req.setUrl(QString("https://api.telegram.org/bot%1/sendMessage").arg(m_monitToken));
+                    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+                    m_manager->post(req, str.toUtf8());
+                });
+            }
         }
     });
     m_timer->start(K_TELEGRAM_FLOOD_LIMIT);
+
+    m_timerPing = new QTimer(this);
+    connect(m_timerPing, &QTimer::timeout, this, [this](){
+        if(!m_manager) {
+            qInfo() << "Manager is not ready yet.";
+            return;
+        }
+
+        qInfo() << "Ping!";
+        if(!m_monitToken.isEmpty()){
+            auto silent = "true";
+            auto text = QString("Ping %1").arg(m_monitIdent);
+            QString str = QString("{\"chat_id\":\"%1\", \"text\": \"%2\", \"disable_web_page_preview\": \"false\", \"parse_mode\": \"Markdown\", \"disable_notification\": \"%3\" }")
+                .arg(m_monitChat)
+                .arg(text)
+                .arg(silent);
+
+            QMutexLocker locker(&m_mutex);
+            m_pendingMonitRequests.append(str);
+        }
+    });
+    m_timerPing->start(K_PING_PERIOD);
+
 };
 
 TelegramNotifier::~TelegramNotifier()
 {
     delete m_timer;
+    delete m_timerPing;
 }
 
 void TelegramNotifier::setup(const QSettings & settings, MainWindow * origin)
 {
     m_telegramChat = settings.value("telegram_chat").toString();
     m_telegramToken = settings.value("telegram_token").toString();
+
+    m_monitChat = settings.value("monit_chat").toString();
+    m_monitToken = settings.value("monit_token").toString();
+    m_monitIdent = settings.value("airport").toString();
 
     if(m_telegramToken.isEmpty()){
         qInfo() << "No Telegram information, don't notify!";

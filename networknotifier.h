@@ -37,9 +37,16 @@ private:
     QString m_telegramChat;
     QString m_telegramToken;
 
+    QString m_monitChat;
+    QString m_monitToken;
+    QString m_monitIdent;
+
     QList<QString> m_pendingRequests;
+    QList<QString> m_pendingMonitRequests;
+
     QMutex m_mutex;
     QTimer *m_timer = nullptr;
+    QTimer *m_timerPing = nullptr;
 };
 
 #endif // NETWORKNOTIFIER_H
