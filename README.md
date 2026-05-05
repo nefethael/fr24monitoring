@@ -1,4 +1,6 @@
-# fr24monitoring
+# fr24monitoring (DEPRECATED)
+
+/!\ DOESN'T WORK ANYMORE /!\
 
 fr24monitoring fetches informations from FlightRadar24 website and sends notifications when interesting aircrafts are planned for your airport
 
